@@ -274,6 +274,7 @@
             if (type === 'study') metrics.study_streak += val;
             renderDashboard();
             await saveMetricsRow();
+            console.log(`Updated ${type} streak by ${val}. New value:`, type === 'dev' ? metrics.dev_streak : metrics.study_streak);
         }
 
         async function resetStreaks() {
