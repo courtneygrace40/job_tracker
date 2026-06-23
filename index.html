@@ -217,12 +217,12 @@
                         <td class="py-3 px-4 font-semibold text-white">${escapeHtml(app.company)}</td>
                         <td class="py-3 px-4">${escapeHtml(app.position || '')}</td>
                         <td class="py-3 px-4">
-                            <select onchange="updateAppStatus(${app.id}, this.value)" class="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-gray-300 focus:outline-none">
-                                <option value="Applied" ${app.status === 'Applied' ? 'selected' : ''}>Applied</option>
-                                <option value="Interviewing" ${app.status === 'Interviewing' ? 'selected' : ''}>Interviewing</option>
-                                <option value="Offer" ${app.status === 'Offer' ? 'selected' : ''}>Offer</option>
-                                <option value="Rejected" ${app.status === 'Rejected' ? 'selected' : ''}>Archived</option>
-                            </select>
+                        <select onchange="updateAppStatus(${app.id}, this.value)" class="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-gray-300 focus:outline-none">
+                            <option value="Applied" ${app.status === 'Applied' ? 'selected="selected"' : ''}>Applied</option>
+                            <option value="Interviewing" ${app.status === 'Interviewing' ? 'selected="selected"' : ''}>Interviewing</option>
+                            <option value="Offer" ${app.status === 'Offer' ? 'selected="selected"' : ''}>Offer</option>
+                            <option value="Rejected" ${app.status === 'Rejected' ? 'selected="selected"' : ''}>Archived</option>
+                        </select>
                         </td>
                         <td class="py-3 px-4 text-right">
                             <button onclick="deleteApplication(${app.id})" class="text-xs text-red-400 hover:text-red-300 transition">Delete</button>
