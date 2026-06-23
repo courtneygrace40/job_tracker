@@ -12,13 +12,10 @@
 
     <section class="snap-section flex flex-col justify-center items-center bg-radial from-gray-900 to-gray-950 px-4 relative border-b border-gray-800">
         <div class="max-w-3xl text-center space-y-6">
-            <span class="text-xs uppercase tracking-widest text-emerald-400 font-mono font-bold bg-emerald-950/50 px-3 py-1.5 rounded-full border border-emerald-800/40">
-                Daily Focus Archetype
-            </span>
             <blockquote class="text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-relaxed italic">
-                "Data is about storytelling, and software is how we scale those stories to protect and benefit the world."
+                "O passi graviora, dabit deus his quoque finem... forsan et haec olim meminisse iuvabit."
             </blockquote>
-            <p class="text-sm text-gray-400 font-mono">— Engineering Pipeline Terminal</p>
+            <p class="text-sm text-gray-400 font-mono">O you who have suffered worse, the god will grant an end to this too... perhaps one day it will bring joy to remember even this."</p>
         </div>
         
         <button onclick="scrollToDashboard()" class="absolute bottom-8 flex flex-col items-center gap-2 cursor-pointer text-gray-400 hover:text-emerald-400 transition group">
@@ -122,3 +119,33 @@
                 </div>
 
                 <div class="bg-gray-950 p-6 rounded-xl border border-gray-800 shadow-xl">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <h2 class="text-lg font-semibold text-gray-300">Quick-Add Application Log</h2>
+                    </div>
+                    <form id="app-form" onsubmit="addApplication(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                        <input type="text" id="app-company" placeholder="Company Name" required class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <input type="text" id="app-role" placeholder="Position (e.g., Data Scientist)" required class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold py-2 transition">Add Application</button>
+                    </form>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-gray-900 text-xs uppercase text-gray-400 border-b border-gray-800">
+                                <tr>
+                                    <th class="py-3 px-4">Company</th>
+                                    <th class="py-3 px-4">Position</th>
+                                    <th class="py-3 px-4">Status</th>
+                                    <th class="py-3 px-4 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="app-table-body" class="divide-y divide-gray-850"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="app.js"></script>
+</body>
+</html>
