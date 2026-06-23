@@ -148,9 +148,14 @@
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-       // Client-side execution memory structures
-        let metrics = { dev_streak: 0, study_streak: 0, lc_easy: 0, lc_medium: 0, lc_hard: 0, aws_domains: [false, false, false, false] };
-        let applicationsList = [];
+        let state = {
+            appCount: 0,
+            devStreak: 0,
+            studyStreak: 0,
+            leetcode: { easy: 0, medium: 0, hard: 0 },
+            awsDomains: [false, false, false, false],
+            applications: []
+        };
 
         const awsDomainLabels = [
             "Data Engineering (S3, Glue, Kinesis)",
@@ -160,28 +165,33 @@
         ];
 
         window.onload = async function() {
-            await loadAllDatabaseData();
+            await loadDataFromDatabase();
             renderDashboard();
         };
 
         // Database Integration Layers
-        async function loadAllDatabaseData() {
-            updateSyncStatus("Syncing with cloud tables...", "text-yellow-400");
+        async function loadDataFromDatabase() {
+            updateSyncStatus("Fetching latest updates...", "text-yellow-400");
             try {
-                // 1. Fetch your independent application rows (newest first)
-                const appRes = await _supabase.from('job_applications').select('*').order('id', { ascending: false });
-                if (appRes.error) throw appRes.error;
-                applicationsList = appRes.data || [];
+                const { data, error } = await _supabase
+                    .from('dashboard_storage')
+                    .select('state_json')
+                    .eq('id', RECORD_ID)
+                    .single();
 
-                // 2. Fetch your lightweight upskilling metrics row
-                const metricsRes = await _supabase.from('user_metrics').select('*').eq('id', RECORD_ID).single();
-                if (metricsRes.error && metricsRes.error.code !== 'PGRST116') throw metricsRes.error;
-                if (metricsRes.data) metrics = metricsRes.data;
+                if (error && error.code !== 'PGRST116') throw error; // Edge case: no record created yet
 
+                if (data && data.state_json) {
+                    state = data.state_json;
+                }
                 updateSyncStatus("Cloud Synced", "text-emerald-400");
             } catch (err) {
-                console.error("Database connection fault:", err);
-                updateSyncStatus("Database Sync Error", "text-red-400");
+                console.error("Error connecting to Supabase:", err);
+                updateSyncStatus("Offline Cache Mode", "text-red-400");
+                // Fallback to local storage if network or DB fails
+                if (localStorage.getItem('careerDashboardState')) {
+                    state = JSON.parse(localStorage.getItem('careerDashboardState'));
+                }
             }
         }
 
@@ -210,22 +220,22 @@
 
         // Render Controller
         function renderDashboard() {
-            // Total apps is now calculated dynamically from how many rows are in your array
-            document.getElementById('app-count').innerText = applicationsList.length;
+            document.getElementById('app-count').innerText = state.appCount;
+            document.getElementById('dev-streak').innerText = `${state.devStreak} days`;
+            document.getElementById('study-streak').innerText = `${state.studyStreak} days`;
             
-            document.getElementById('dev-streak').innerText = `${metrics.dev_streak} days`;
-            document.getElementById('study-streak').innerText = `${metrics.study_streak} days`;
-            
-            document.getElementById('lc-easy').value = metrics.lc_easy;
-            document.getElementById('lc-medium').value = metrics.lc_medium;
-            document.getElementById('lc-hard').value = metrics.lc_hard;
-            document.getElementById('lc-total').innerText = metrics.lc_easy + metrics.lc_medium + metrics.lc_hard;
+            document.getElementById('lc-easy').value = state.leetcode.easy || 0;
+            document.getElementById('lc-medium').value = state.leetcode.medium || 0;
+            document.getElementById('lc-hard').value = state.leetcode.hard || 0;
+            document.getElementById('lc-total').innerText = 
+                (parseInt(state.leetcode.easy) || 0) + 
+                (parseInt(state.leetcode.medium) || 0) + 
+                (parseInt(state.leetcode.hard) || 0);
 
-            // Render AWS checkboxes
             const awsContainer = document.getElementById('aws-checklist');
             awsContainer.innerHTML = '';
             let completedDomains = 0;
-            metrics.aws_domains.forEach((isChecked, index) => {
+            state.awsDomains.forEach((isChecked, index) => {
                 if (isChecked) completedDomains++;
                 awsContainer.innerHTML += `
                     <label class="flex items-center gap-3 cursor-pointer text-sm text-gray-300 hover:text-white transition">
@@ -234,20 +244,19 @@
                     </label>
                 `;
             });
-            const awsPct = Math.round((completedDomains / metrics.aws_domains.length) * 100);
+            const awsPct = Math.round((completedDomains / state.awsDomains.length) * 100);
             document.getElementById('aws-progress-bar').style.width = `${awsPct}%`;
             document.getElementById('aws-progress-text').innerText = `${awsPct}% Complete`;
 
-            // Render Table Rows matching your exact 'position' layout mapping
             const tbody = document.getElementById('app-table-body');
             tbody.innerHTML = '';
-            applicationsList.forEach((app) => {
+            state.applications.forEach((app, index) => {
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-900/50 transition">
                         <td class="py-3 px-4 font-semibold text-white">${escapeHtml(app.company)}</td>
-                        <td class="py-3 px-4">${escapeHtml(app.position || '')}</td>
+                        <td class="py-3 px-4">${escapeHtml(app.role)}</td>
                         <td class="py-3 px-4">
-                            <select onchange="updateAppStatus(${app.id}, this.value)" class="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-gray-300 focus:outline-none">
+                            <select onchange="updateAppStatus(${index}, this.value)" class="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-gray-300 focus:outline-none">
                                 <option value="Applied" ${app.status === 'Applied' ? 'selected' : ''}>Applied</option>
                                 <option value="Interviewing" ${app.status === 'Interviewing' ? 'selected' : ''}>Interviewing</option>
                                 <option value="Offer" ${app.status === 'Offer' ? 'selected' : ''}>Offer</option>
@@ -255,7 +264,7 @@
                             </select>
                         </td>
                         <td class="py-3 px-4 text-right">
-                            <button onclick="deleteApplication(${app.id})" class="text-xs text-red-400 hover:text-red-300 transition">Delete</button>
+                            <button onclick="deleteApplication(${index})" class="text-xs text-red-400 hover:text-red-300 transition">Delete</button>
                         </td>
                     </tr>
                 `;
@@ -269,101 +278,64 @@
             renderDashboard();
         }
 
-        async function changeStreak(type, val) {
-            if (type === 'dev') metrics.dev_streak += val;
-            if (type === 'study') metrics.study_streak += val;
+        function incrementStreak(type) {
+            if (type === 'dev') state.devStreak++;
+            if (type === 'study') state.studyStreak++;
+            saveState();
             renderDashboard();
-            await saveMetricsRow();
         }
 
         async function resetStreaks() {
             if(confirm("Reset consistency tracking metrics?")) {
-                metrics.dev_streak = 0;
-                metrics.study_streak = 0;
+                state.devStreak = 0;
+                state.studyStreak = 0;
+                await saveState();
                 renderDashboard();
-                await saveMetricsRow();
             }
         }
 
-        async function updateLeetCode() {
-            metrics.lc_easy = parseInt(document.getElementById('lc-easy').value) || 0;
-            metrics.lc_medium = parseInt(document.getElementById('lc-medium').value) || 0;
-            metrics.lc_hard = parseInt(document.getElementById('lc-hard').value) || 0;
+        function updateLeetCode() {
+            state.leetcode.easy = parseInt(document.getElementById('lc-easy').value) || 0;
+            state.leetcode.medium = parseInt(document.getElementById('lc-medium').value) || 0;
+            state.leetcode.hard = parseInt(document.getElementById('lc-hard').value) || 0;
+            saveState();
             renderDashboard();
-            await saveMetricsRow();
         }
 
-        async function toggleAwsDomain(index) {
-            metrics.aws_domains[index] = !metrics.aws_domains[index];
+        function toggleAwsDomain(index) {
+            state.awsDomains[index] = !state.awsDomains[index];
+            saveState();
             renderDashboard();
-            await saveMetricsRow();
         }
 
-        async function addApplication(e) {
+        function addApplication(e) {
             e.preventDefault();
-            updateSyncStatus("Adding row...", "text-yellow-400");
             const companyEl = document.getElementById('app-company');
             const roleEl = document.getElementById('app-role');
+            
+            state.applications.unshift({
+                company: companyEl.value,
+                role: roleEl.value,
+                status: 'Applied'
+            });
 
-            try {
-                const { data, error } = await _supabase
-                    .from('job_applications')
-                    .insert([{ company: companyEl.value, position: roleEl.value, status: 'Applied' }])
-                    .select();
-
-                if (error) throw error;
-                
-                applicationsList.unshift(data[0]); // Add new row to top of UI list
-                companyEl.value = '';
-                roleEl.value = '';
-                updateSyncStatus("Cloud Synced", "text-emerald-400");
-                renderDashboard();
-            } catch (err) {
-                console.error("Failed inserting row:", err);
-                updateSyncStatus("Error Adding Row", "text-red-400");
-            }
+            state.appCount++;
+            companyEl.value = '';
+            roleEl.value = '';
+            
+            saveState();
+            renderDashboard();
         }
 
-        async function updateAppStatus(id, status) {
-            updateSyncStatus("Updating row status...", "text-yellow-400");
-            try {
-                const { error } = await _supabase.from('job_applications').update({ status: status }).eq('id', id);
-                if (error) throw error;
-                
-                const target = applicationsList.find(a => a.id === id);
-                if (target) target.status = status;
-                updateSyncStatus("Cloud Synced", "text-emerald-400");
-            } catch (err) {
-                console.error("Status modify failed:", err);
-                updateSyncStatus("Status Save Error", "text-red-400");
-            }
+        async function updateAppStatus(index, status) {
+            state.applications[index].status = status;
+            await saveState();
         }
 
-        async function deleteApplication(id) {
-            updateSyncStatus("Deleting row...", "text-yellow-400");
-            try {
-                const { error } = await _supabase.from('job_applications').delete().eq('id', id);
-                if (error) throw error;
-                
-                applicationsList = applicationsList.filter(a => a.id !== id);
-                updateSyncStatus("Cloud Synced", "text-emerald-400");
-                renderDashboard();
-            } catch (err) {
-                console.error("Row delete failed:", err);
-                updateSyncStatus("Delete Error", "text-red-400");
-            }
-        }
-
-        async function saveMetricsRow() {
-            updateSyncStatus("Syncing metrics...", "text-yellow-400");
-            try {
-                const { error } = await _supabase.from('user_metrics').upsert({ id: RECORD_ID, ...metrics });
-                if (error) throw error;
-                updateSyncStatus("Cloud Synced", "text-emerald-400");
-            } catch (err) {
-                console.error("Metrics sync error:", err);
-                updateSyncStatus("Sync Error", "text-red-400");
-            }
+        async function deleteApplication(index) {
+            state.applications.splice(index, 1);
+            await saveState();
+            renderDashboard();
         }
 
         function escapeHtml(str) {
