@@ -49,7 +49,7 @@
                         </div>
                         <div class="text-right">
                             <span id="dev-streak" class="text-2xl font-bold text-orange-400">0 days</span>
-                            <button onclick="changeStreak('dev', 1)" class="...">+ Log Today</button>
+                            <button onclick="changeStreak('dev', 1)" class="text-xs text-emerald-450 hover:text-emerald-300 hover:underline block mt-1">+ Log Today</button>
                         </div>
                     </div>
                     <div class="flex items-center justify-between p-3 bg-gray-900 rounded-lg border border-gray-850">
@@ -59,9 +59,7 @@
                         </div>
                         <div class="text-right">
                             <span id="study-streak" class="text-2xl font-bold text-cyan-400">0 days</span>
-                            <button onclick="changeStreak('study', 1)" class="...">+ Log Today</button>
-                        </div>
-                    </div>
+                            <button onclick="changeStreak('study', 1)" class="text-xs text-emerald-450 hover:text-emerald-300 hover:underline block mt-1">+ Log Today</button>
                     <button onclick="resetStreaks()" class="text-xs text-gray-600 hover:text-gray-400 transition block pt-2">Reset Streaks</button>
                 </div>
             </div>
@@ -185,22 +183,7 @@
             }
         }
 
-        async function saveState() {
-            updateSyncStatus("Syncing with Cloud...", "text-yellow-400");
-            localStorage.setItem('careerDashboardState', JSON.stringify(state)); // Backup local copy
-            
-            try {
-                const { error } = await _supabase
-                    .from('user_metrics')
-                    .upsert({ id: RECORD_ID, state_json: state });
-
-                if (error) throw error;
-                updateSyncStatus("Cloud Synced", "text-emerald-400");
-            } catch (err) {
-                console.error("Failed to save to database:", err);
-                updateSyncStatus("Sync Failed (Saved Locally)", "text-red-400");
-            }
-        }
+        
 
         function updateSyncStatus(text, colorClass) {
             const statusEl = document.getElementById('sync-status');
@@ -264,9 +247,7 @@
 
         // Action Handlers
         function changeApps(val) {
-            state.appCount = Math.max(0, state.appCount + val);
-            saveState();
-            renderDashboard();
+            console.log("Application count is calculated directly from your database rows. Add an application below to increase the count!");
         }
 
         async function changeStreak(type, val) {
