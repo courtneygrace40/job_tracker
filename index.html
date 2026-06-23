@@ -174,7 +174,7 @@
                 applicationsList = appRes.data || [];
 
                 // 2. Fetch your lightweight upskilling metrics row
-                const metricsRes = await _supabase.from('dashboard_metrics').select('*').eq('id', RECORD_ID).single();
+                const metricsRes = await _supabase.from('user_metrics').select('*').eq('id', RECORD_ID).single();
                 if (metricsRes.error && metricsRes.error.code !== 'PGRST116') throw metricsRes.error;
                 if (metricsRes.data) metrics = metricsRes.data;
 
@@ -191,7 +191,7 @@
             
             try {
                 const { error } = await _supabase
-                    .from('dashboard_storage')
+                    .from('user_metrics')
                     .upsert({ id: RECORD_ID, state_json: state });
 
                 if (error) throw error;
