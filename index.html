@@ -32,10 +32,7 @@
                 <h2 class="text-lg font-semibold text-gray-300 mb-2">Applications Submitted</h2>
                 <div class="flex items-center justify-between mt-4">
                     <span id="app-count" class="text-5xl font-black text-emerald-400">0</span>
-                    <div class="flex gap-2">
-                        <button onclick="changeApps(-1)" class="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition">-</button>
-                        <button onclick="changeApps(1)" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg transition">+</button>
-                    </div>
+                    <p class="text-xs text-gray-500 max-w-[150px]">Calculated directly from database rows.</p>
                 </div>
             </div>
 
@@ -49,7 +46,7 @@
                         </div>
                         <div class="text-right">
                             <span id="dev-streak" class="text-2xl font-bold text-orange-400">0 days</span>
-                            <button onclick="changeStreak('dev', 1)" class="text-xs text-emerald-450 hover:text-emerald-300 hover:underline block mt-1">+ Log Today</button>
+                            <button onclick="changeStreak('dev', 1)" class="text-xs text-emerald-400 hover:text-emerald-300 hover:underline block mt-1">+ Log Today</button>
                         </div>
                     </div>
                     <div class="flex items-center justify-between p-3 bg-gray-900 rounded-lg border border-gray-850">
@@ -59,7 +56,9 @@
                         </div>
                         <div class="text-right">
                             <span id="study-streak" class="text-2xl font-bold text-cyan-400">0 days</span>
-                            <button onclick="changeStreak('study', 1)" class="text-xs text-emerald-450 hover:text-emerald-300 hover:underline block mt-1">+ Log Today</button>
+                            <button onclick="changeStreak('study', 1)" class="text-xs text-emerald-400 hover:text-emerald-300 hover:underline block mt-1">+ Log Today</button>
+                        </div>
+                    </div>
                     <button onclick="resetStreaks()" class="text-xs text-gray-600 hover:text-gray-400 transition block pt-2">Reset Streaks</button>
                 </div>
             </div>
@@ -114,7 +113,7 @@
                 </div>
                 <form id="app-form" onsubmit="addApplication(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                     <input type="text" id="app-company" placeholder="Company Name" required class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
-                    <input type="text" id="app-role" placeholder="Role Title (e.g., Data Scientist)" required class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <input type="text" id="app-role" placeholder="Position (e.g., Data Scientist)" required class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
                     <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold py-2 transition">Add Application</button>
                 </form>
 
@@ -136,17 +135,13 @@
     </main>
 
     <script>
-        // CONFIGURATION: Replace these values with your actual Supabase credentials
         const SUPABASE_URL = "https://mmrrhxwotzbjfmhedogj.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tcnJoeHdvdHpiamZtaGVkb2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMzk5NDksImV4cCI6MjA5NzgxNTk0OX0.MLpgR4jTs2RIo1TY0jFRUIhwgnlETOTyrYh4kW71NuE";
-        
-        // Single row identifier for your personal tracking data
         const RECORD_ID = "user_pipeline_tracker"; 
 
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-       // Client-side execution memory structures
         let metrics = { dev_streak: 0, study_streak: 0, lc_easy: 0, lc_medium: 0, lc_hard: 0, aws_domains: [false, false, false, false] };
         let applicationsList = [];
 
@@ -162,16 +157,13 @@
             renderDashboard();
         };
 
-        // Database Integration Layers
         async function loadAllDatabaseData() {
             updateSyncStatus("Syncing with cloud tables...", "text-yellow-400");
             try {
-                // 1. Fetch your independent application rows (newest first)
                 const appRes = await _supabase.from('job_applications').select('*').order('id', { ascending: false });
                 if (appRes.error) throw appRes.error;
                 applicationsList = appRes.data || [];
 
-                // 2. Fetch your lightweight upskilling metrics row
                 const metricsRes = await _supabase.from('user_metrics').select('*').eq('id', RECORD_ID).single();
                 if (metricsRes.error && metricsRes.error.code !== 'PGRST116') throw metricsRes.error;
                 if (metricsRes.data) metrics = metricsRes.data;
@@ -183,17 +175,13 @@
             }
         }
 
-        
-
         function updateSyncStatus(text, colorClass) {
             const statusEl = document.getElementById('sync-status');
             statusEl.innerText = text;
             statusEl.className = `text-xs bg-gray-900 px-3 py-1.5 rounded-md border border-gray-800 ${colorClass}`;
         }
 
-        // Render Controller
         function renderDashboard() {
-            // Total apps is now calculated dynamically from how many rows are in your array
             document.getElementById('app-count').innerText = applicationsList.length;
             
             document.getElementById('dev-streak').innerText = `${metrics.dev_streak} days`;
@@ -204,7 +192,6 @@
             document.getElementById('lc-hard').value = metrics.lc_hard;
             document.getElementById('lc-total').innerText = metrics.lc_easy + metrics.lc_medium + metrics.lc_hard;
 
-            // Render AWS checkboxes
             const awsContainer = document.getElementById('aws-checklist');
             awsContainer.innerHTML = '';
             let completedDomains = 0;
@@ -221,7 +208,6 @@
             document.getElementById('aws-progress-bar').style.width = `${awsPct}%`;
             document.getElementById('aws-progress-text').innerText = `${awsPct}% Complete`;
 
-            // Render Table Rows matching your exact 'position' layout mapping
             const tbody = document.getElementById('app-table-body');
             tbody.innerHTML = '';
             applicationsList.forEach((app) => {
@@ -245,17 +231,11 @@
             });
         }
 
-        // Action Handlers
-        function changeApps(val) {
-            console.log("Application count is calculated directly from your database rows. Add an application below to increase the count!");
-        }
-
         async function changeStreak(type, val) {
-            if (type === 'dev') {metrics.dev_streak = (parseInt(metrics.dev_streak) || 0) + val;}
-            if (type === 'study') {metrics.study_streak = (parseInt(metrics.study_streak) || 0) + val;}
+            if (type === 'dev') { metrics.dev_streak = (parseInt(metrics.dev_streak) || 0) + val; }
+            if (type === 'study') { metrics.study_streak = (parseInt(metrics.study_streak) || 0) + val; }
             renderDashboard();
             await saveMetricsRow();
-            console.log(`Updated ${type} streak by ${val}. New value:`, type === 'dev' ? metrics.dev_streak : metrics.study_streak);
         }
 
         async function resetStreaks() {
@@ -295,7 +275,7 @@
 
                 if (error) throw error;
                 
-                applicationsList.unshift(data[0]); // Add new row to top of UI list
+                applicationsList.unshift(data[0]);
                 companyEl.value = '';
                 roleEl.value = '';
                 updateSyncStatus("Cloud Synced", "text-emerald-400");
