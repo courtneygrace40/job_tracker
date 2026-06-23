@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev & Data Career Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans min-h-screen">
+
+    <header class="border-b border-gray-800 bg-gray-950 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-tight text-emerald-400 flex items-center gap-2">
+                <span>🚀</span> Career Pipeline Dashboard
+            </h1>
+            <div id="sync-status" class="text-xs text-yellow-400 bg-gray-900 px-3 py-1.5 rounded-md border border-gray-800">
+                Connecting to Database...
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="space-y-6">
+            <div class="bg-gray-950 p-6 rounded-xl border border-gray-800 shadow-xl">
+                <h2 class="text-lg font-semibold text-gray-300 mb-2">Applications Submitted</h2>
+                <div class="flex items-center justify-between mt-4">
+                    <span id="app-count" class="text-5xl font-black text-emerald-400">0</span>
+                    <div class="flex gap-2">
+                        <button onclick="changeApps(-1)" class="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition">-</button>
+                        <button onclick="changeApps(1)" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg transition">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-950 p-6 rounded-xl border border-gray-800 shadow-xl">
+                <h2 class="text-lg font-semibold text-gray-300 mb-4">Consistency Metrics</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-3 bg-gray-900 rounded-lg border border-gray-850">
+                        <div>
+                            <p class="text-sm font-medium text-gray-400">Project / Dev Streak</p>
+                            <p class="text-xs text-gray-500">Code committed or feature built</p>
+                        </div>
+                        <div class="text-right">
+                            <span id="dev-streak" class="text-2xl font-bold text-orange-400">0 days</span>
+                            <button onclick="incrementStreak('dev')" class="block text-xs text-emerald-400 hover:underline mt-1">+ Log Today</button>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-gray-900 rounded-lg border border-gray-850">
+                        <div>
+                            <p class="text-sm font-medium text-gray-400">Technical Study Streak</p>
+                            <p class="text-xs text-gray-500">System design, ML, or core CS</p>
+                        </div>
+                        <div class="text-right">
+                            <span id="study-streak" class="text-2xl font-bold text-cyan-400">0 days</span>
+                            <button onclick="incrementStreak('study')" class="block text-xs text-emerald-400 hover:underline mt-1">+ Log Today</button>
+                        </div>
+                    </div>
+                    <button onclick="resetStreaks()" class="text-xs text-gray-600 hover:text-gray-400 transition block pt-2">Reset Streaks</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-6 lg:col-span-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-gray-950 p-6 rounded-xl border border-gray-800 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-300 mb-4 flex items-center gap-2">
+                            <span class="text-yellow-500">⚡</span> LeetCode Counter
+                        </h2>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-green-400 font-medium">Easy</span>
+                                <input type="number" id="lc-easy" onchange="updateLeetCode()" class="w-20 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-center font-bold text-white">
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-yellow-500 font-medium">Medium</span>
+                                <input type="number" id="lc-medium" onchange="updateLeetCode()" class="w-20 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-center font-bold text-white">
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-red-500 font-medium">Hard</span>
+                                <input type="number" id="lc-hard" onchange="updateLeetCode()" class="w-20 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-center font-bold text-white">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-800 mt-4 pt-4 flex justify-between items-center">
+                        <span class="text-sm text-gray-400">Total Solved</span>
+                        <span id="lc-total" class="text-2xl font-bold text-white">0</span>
+                    </div>
+                </div>
+
+                <div class="bg-gray-950 p-6 rounded-xl border border-gray-800 shadow-xl">
+                    <h2 class="text-lg font-semibold text-gray-300 mb-4 flex items-center gap-2">
+                        <span class="text-purple-400">☁️</span> AWS ML Specialty Prep
+                    </h2>
+                    <p class="text-xs text-gray-400 mb-4">Track progress through major syllabus domains:</p>
+                    <div class="space-y-3" id="aws-checklist"></div>
+                    <div class="mt-4 pt-2">
+                        <div class="w-full bg-gray-800 rounded-full h-2">
+                            <div id="aws-progress-bar" class="bg-purple-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <p class="text-right text-xs text-gray-500 mt-1" id="aws-progress-text">0% Complete</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-950 p-6 rounded-xl border border-gray-800 shadow-xl">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <h2 class="text-lg font-semibold text-gray-300">Quick-Add Application Log</h2>
+                </div>
+                <form id="app-form" onsubmit="addApplication(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                    <input type="text" id="app-company" placeholder="Company Name" required class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <input type="text" id="app-role" placeholder="Role Title (e.g., Data Scientist)" required class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold py-2 transition">Add Application</button>
+                </form>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-400">
+                        <thead class="bg-gray-900 text-xs uppercase text-gray-400 border-b border-gray-800">
+                            <tr>
+                                <th class="py-3 px-4">Company</th>
+                                <th class="py-3 px-4">Role</th>
+                                <th class="py-3 px-4">Status</th>
+                                <th class="py-3 px-4 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="app-table-body" class="divide-y divide-gray-850"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // CONFIGURATION: Replace these values with your actual Supabase credentials
+        const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
+        const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+        
+        // Single row identifier for your personal tracking data
+        const RECORD_ID = "user_pipeline_tracker"; 
+
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let state = {
+            appCount: 0,
+            devStreak: 0,
+            studyStreak: 0,
+            leetcode: { easy: 0, medium: 0, hard: 0 },
+            awsDomains: [false, false, false, false],
+            applications: []
+        };
+
+        const awsDomainLabels = [
+            "Data Engineering (S3, Glue, Kinesis)",
+            "Exploratory Data Analysis (SageMaker, Athena)",
+            "Modeling (Algorithms, Hyperparameters)",
+            "ML Operations & Security (Pipelines, IAM)"
+        ];
+
+        window.onload = async function() {
+            await loadDataFromDatabase();
+            renderDashboard();
+        };
+
+        // Database Integration Layers
+        async function loadDataFromDatabase() {
+            updateSyncStatus("Fetching latest updates...", "text-yellow-400");
+            try {
+                const { data, error } = await _supabase
+                    .from('dashboard_storage')
+                    .select('state_json')
+                    .eq('id', RECORD_ID)
+                    .single();
+
+                if (error && error.code !== 'PGRST116') throw error; // Edge case: no record created yet
+
+                if (data && data.state_json) {
+                    state = data.state_json;
+                }
+                updateSyncStatus("Cloud Synced", "text-emerald-400");
+            } catch (err) {
+                console.error("Error connecting to Supabase:", err);
+                updateSyncStatus("Offline Cache Mode", "text-red-400");
+                // Fallback to local storage if network or DB fails
+                if (localStorage.getItem('careerDashboardState')) {
+                    state = JSON.parse(localStorage.getItem('careerDashboardState'));
+                }
+            }
+        }
+
+        async function saveState() {
+            updateSyncStatus("Syncing with Cloud...", "text-yellow-400");
+            localStorage.setItem('careerDashboardState', JSON.stringify(state)); // Backup local copy
+            
+            try {
+                const { error } = await _supabase
+                    .from('dashboard_storage')
+                    .upsert({ id: RECORD_ID, state_json: state });
+
+                if (error) throw error;
+                updateSyncStatus("Cloud Synced", "text-emerald-400");
+            } catch (err) {
+                console.error("Failed to save to database:", err);
+                updateSyncStatus("Sync Failed (Saved Locally)", "text-red-400");
+            }
+        }
+
+        function updateSyncStatus(text, colorClass) {
+            const statusEl = document.getElementById('sync-status');
+            statusEl.innerText = text;
+            statusEl.className = `text-xs bg-gray-900 px-3 py-1.5 rounded-md border border-gray-800 ${colorClass}`;
+        }
+
+        // Render Controller
+        function renderDashboard() {
+            document.getElementById('app-count').innerText = state.appCount;
+            document.getElementById('dev-streak').innerText = `${state.devStreak} days`;
+            document.getElementById('study-streak').innerText = `${state.studyStreak} days`;
+            
+            document.getElementById('lc-easy').value = state.leetcode.easy || 0;
+            document.getElementById('lc-medium').value = state.leetcode.medium || 0;
+            document.getElementById('lc-hard').value = state.leetcode.hard || 0;
+            document.getElementById('lc-total').innerText = 
+                (parseInt(state.leetcode.easy) || 0) + 
+                (parseInt(state.leetcode.medium) || 0) + 
+                (parseInt(state.leetcode.hard) || 0);
+
+            const awsContainer = document.getElementById('aws-checklist');
+            awsContainer.innerHTML = '';
+            let completedDomains = 0;
+            state.awsDomains.forEach((isChecked, index) => {
+                if (isChecked) completedDomains++;
+                awsContainer.innerHTML += `
+                    <label class="flex items-center gap-3 cursor-pointer text-sm text-gray-300 hover:text-white transition">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleAwsDomain(${index})" class="rounded border-gray-700 bg-gray-950 text-purple-500 focus:ring-purple-500 w-4 h-4">
+                        <span>${awsDomainLabels[index]}</span>
+                    </label>
+                `;
+            });
+            const awsPct = Math.round((completedDomains / state.awsDomains.length) * 100);
+            document.getElementById('aws-progress-bar').style.width = `${awsPct}%`;
+            document.getElementById('aws-progress-text').innerText = `${awsPct}% Complete`;
+
+            const tbody = document.getElementById('app-table-body');
+            tbody.innerHTML = '';
+            state.applications.forEach((app, index) => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-900/50 transition">
+                        <td class="py-3 px-4 font-semibold text-white">${escapeHtml(app.company)}</td>
+                        <td class="py-3 px-4">${escapeHtml(app.role)}</td>
+                        <td class="py-3 px-4">
+                            <select onchange="updateAppStatus(${index}, this.value)" class="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-gray-300 focus:outline-none">
+                                <option value="Applied" ${app.status === 'Applied' ? 'selected' : ''}>Applied</option>
+                                <option value="Interviewing" ${app.status === 'Interviewing' ? 'selected' : ''}>Interviewing</option>
+                                <option value="Offer" ${app.status === 'Offer' ? 'selected' : ''}>Offer</option>
+                                <option value="Rejected" ${app.status === 'Rejected' ? 'selected' : ''}>Archived</option>
+                            </select>
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <button onclick="deleteApplication(${index})" class="text-xs text-red-400 hover:text-red-300 transition">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Action Handlers
+        function changeApps(val) {
+            state.appCount = Math.max(0, state.appCount + val);
+            saveState();
+            renderDashboard();
+        }
+
+        function incrementStreak(type) {
+            if (type === 'dev') state.devStreak++;
+            if (type === 'study') state.studyStreak++;
+            saveState();
+            renderDashboard();
+        }
+
+        async function resetStreaks() {
+            if(confirm("Reset consistency tracking metrics?")) {
+                state.devStreak = 0;
+                state.studyStreak = 0;
+                await saveState();
+                renderDashboard();
+            }
+        }
+
+        function updateLeetCode() {
+            state.leetcode.easy = parseInt(document.getElementById('lc-easy').value) || 0;
+            state.leetcode.medium = parseInt(document.getElementById('lc-medium').value) || 0;
+            state.leetcode.hard = parseInt(document.getElementById('lc-hard').value) || 0;
+            saveState();
+            renderDashboard();
+        }
+
+        function toggleAwsDomain(index) {
+            state.awsDomains[index] = !state.awsDomains[index];
+            saveState();
+            renderDashboard();
+        }
+
+        function addApplication(e) {
+            e.preventDefault();
+            const companyEl = document.getElementById('app-company');
+            const roleEl = document.getElementById('app-role');
+            
+            state.applications.unshift({
+                company: companyEl.value,
+                role: roleEl.value,
+                status: 'Applied'
+            });
+
+            state.appCount++;
+            companyEl.value = '';
+            roleEl.value = '';
+            
+            saveState();
+            renderDashboard();
+        }
+
+        async function updateAppStatus(index, status) {
+            state.applications[index].status = status;
+            await saveState();
+        }
+
+        async function deleteApplication(index) {
+            state.applications.splice(index, 1);
+            await saveState();
+            renderDashboard();
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
